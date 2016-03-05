@@ -77,23 +77,32 @@ var playGame = function() {
 /* Classes */
 
 var Frog = function() {
-    this.setup('frog', {});
+    this.setup('frog', {
+        reloadTime: 0.25
+    });
     this.reload = this.reloadTime;
     this.x = Game.width / 2 - this.w / 2;
-    this.y = Game.height - Game.playerOffset - this.h;
+    this.y = Game.height - this.h;
 
     this.step = function(dt) {
-        if (Game.keys['up']) {
-            this.y -= 48;
-        }
-        if (Game.keys['down']) {
-            this.y += 48;
-        }
+        this.reload -= dt;
+        if (this.reload <= 0) {
+            if (Game.keys['up']) {
+                this.reload = this.reloadTime;
+                this.y -= this.h;
 
-        if (this.y < 0)
-            this.y = 0;
-        if (this.y > Game.height - this.h)
-            this.y = Game.height - this.h;
+            }
+            if (Game.keys['down']) {
+                this.reload = this.reloadTime;
+                this.y += this.h;
+            }
+
+
+            if (this.y < 0)
+                this.y = 0;
+            if (this.y > Game.height - this.h)
+                this.y = Game.height - this.h;
+        }
     };
 };
 
