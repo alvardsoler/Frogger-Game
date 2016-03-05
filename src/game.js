@@ -96,12 +96,21 @@ var Frog = function() {
                 this.reload = this.reloadTime;
                 this.y += this.h;
             }
+            if (Game.keys['right']) {
+                this.reload = this.reloadTime;
+                this.x += this.w;
+            }
+
+            if (Game.keys['left']) {
+                this.reload = this.reloadTime;
+                this.x -= this.w;
+            }
 
 
-            if (this.y < 0)
-                this.y = 0;
-            if (this.y > Game.height - this.h)
-                this.y = Game.height - this.h;
+            if (this.y < 0) this.y = 0;
+            if (this.y > Game.height - this.h) this.y = Game.height - this.h;
+            if (this.x < 0) this.x = 0;
+            if (this.x > Game.width - this.w) this.x = Game.width - this.w;
         }
     };
 };
