@@ -73,10 +73,41 @@ var playGame = function() {
     gameBoard.add(new Frog());
     gameBoard.add(new Car());
     gameBoard.add(new Car());
+    gameBoard.add(new Log());
+    gameBoard.add(new Log());
     Game.setBoard(1, gameBoard);
 }
 
 /* Classes */
+
+var Log = function() {
+    var seed = Math.random();
+    this.setup('trunk', {
+
+    });
+
+    if ((Math.floor(seed * 2) + 1) == 1) {
+        // se mueve de izquierda a derecha
+        this.xVel = (Math.floor(seed * 150) + 100);
+        console.log(this.xVel);
+        this.x = 0;
+    } else {
+        //se mueve de derecha a izquierda
+        this.xVel = -(Math.floor(seed * 150) + 100);
+        console.log(this.xVel);
+        this.x = Game.width;
+    }
+
+    this.y = 48 + ((Math.floor(seed * 3)) * 48);
+
+    this.step = function(dt) {
+        this.x += this.xVel * dt;
+        if (this.x + this.width < 0 || this.x > Game.width)
+            this.board.remove(this);
+    };
+};
+
+Log.prototype = new Sprite();
 
 var Car = function() {
     var seed = Math.random();
