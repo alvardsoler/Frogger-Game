@@ -71,10 +71,42 @@ var playGame = function() {
     Game.setBoard(0, bgBoard);
     var gameBoard = new GameBoard();
     gameBoard.add(new Frog());
+    gameBoard.add(new Car());
+    gameBoard.add(new Car());
     Game.setBoard(1, gameBoard);
 }
 
 /* Classes */
+
+var Car = function() {
+    var seed = Math.random();
+    this.setup('car' + (Math.floor(seed * 5) + 1), {
+
+    });
+
+    if ((Math.floor(seed * 2) + 1) == 1) {
+        // se mueve de izquierda a derecha
+        this.xVel = (Math.floor(seed * 150) + 100);
+        console.log(this.xVel);
+        this.x = 0;
+    } else {
+        //se mueve de derecha a izquierda
+        this.xVel = -(Math.floor(seed * 150) + 100);
+        console.log(this.xVel);
+        this.x = Game.width;
+    }
+
+    this.y = Game.height - 48 - ((Math.floor(seed * 4) + 1) * 48);
+
+    this.step = function(dt) {
+        this.x += this.xVel * dt;
+        if (this.x + this.width < 0 || this.x > Game.width)
+            this.board.remove(this);
+    };
+
+};
+
+Car.prototype = new Sprite();
 
 var Frog = function() {
     this.setup('frog', {
@@ -108,9 +140,9 @@ var Frog = function() {
 
 
             if (this.y < 0) this.y = 0;
-            if (this.y > Game.height - this.h) this.y = Game.height - this.h;
+            else if (this.y > Game.height - this.h) this.y = Game.height - this.h;
             if (this.x < 0) this.x = 0;
-            if (this.x > Game.width - this.w) this.x = Game.width - this.w;
+            else if (this.x > Game.width - this.w) this.x = Game.width - this.w;
         }
     };
 };
