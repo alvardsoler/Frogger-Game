@@ -75,9 +75,10 @@ var startGame = function() {
         playGame));
 
 };
-
+var lostGame = function() {
+    Game.setBoard(0, new TitleScreen("YOU LOST", "looser lol", startGame));
+};
 var playGame = function() {
-
     var bgBoard = new GameBoard();
     bgBoard.add(new Background());
     Game.setBoard(0, bgBoard);
@@ -108,11 +109,11 @@ Death.prototype.step = function(dt) {
         this.f -= 1 / 4;
         this.frame++;
     }
-    //this.frame++;
 
-
-    if (this.frame > sprites['death'].frames)
+    if (this.frame > sprites['death'].frames) {
         this.board.remove(this);
+        lostGame();
+    }
 };
 var Water = function() {
     this.y = 48;
