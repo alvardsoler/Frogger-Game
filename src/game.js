@@ -117,6 +117,7 @@ var Frog = function() {
     this.y = Game.height - this.h;
 
     this.step = function(dt) {
+        if (this.board.collide(this)) this.board.remove(this);
         this.reload -= dt;
         if (this.reload <= 0) {
             if (Game.keys['up']) {
