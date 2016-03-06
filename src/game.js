@@ -64,27 +64,29 @@ var sprites = {
     }
 };
 
+var FROG = 1,
+    CAR = 2,
+    LOG = 3;
 
 var playGame = function() {
     var bgBoard = new GameBoard();
     bgBoard.add(new Background());
     Game.setBoard(0, bgBoard);
     var gameBoard = new GameBoard();
+    gameBoard.add(new Log());
+    gameBoard.add(new Log());
     gameBoard.add(new Frog());
     gameBoard.add(new Car());
     gameBoard.add(new Car());
-    gameBoard.add(new Log());
-    gameBoard.add(new Log());
+
     Game.setBoard(1, gameBoard);
-}
+};
 
 /* Classes */
 
 var Log = function() {
     var seed = Math.random();
-    this.setup('trunk', {
-
-    });
+    this.setup('trunk', {});
 
     if ((Math.floor(seed * 2) + 1) == 1) {
         // se mueve de izquierda a derecha
@@ -99,21 +101,25 @@ var Log = function() {
     }
 
     this.y = 48 + ((Math.floor(seed * 3)) * 48);
-
-    this.step = function(dt) {
-        this.x += this.xVel * dt;
-        if (this.x + this.width < 0 || this.x > Game.width)
-            this.board.remove(this);
-    };
 };
 
 Log.prototype = new Sprite();
+Log.prototype.type = LOG;
+Log.prototype.step = function(dt) {
+    this.x += this.xVel * dt;
+    if (this.x + this.width < 0 || this.x > Game.width)
+        this.board.remove(this);
+
+    var frog = this.board.collide(this, FROG);
+    if (frog)
+        frog.onLog(this.xVel);
+
+};
+
 
 var Car = function() {
     var seed = Math.random();
-    this.setup('car' + (Math.floor(seed * 5) + 1), {
-
-    });
+    this.setup('car' + (Math.floor(seed * 5) + 1), {});
 
     if ((Math.floor(seed * 2) + 1) == 1) {
         // se mueve de izquierda a derecha
@@ -128,67 +134,80 @@ var Car = function() {
     }
 
     this.y = Game.height - 48 - ((Math.floor(seed * 4) + 1) * 48);
+};
+Car.prototype = new Sprite();
+Car.prototype.type = CAR;
 
-    this.step = function(dt) {
-        this.x += this.xVel * dt;
-        if (this.x + this.width < 0 || this.x > Game.width)
-            this.board.remove(this);
-    };
+Car.prototype.step = function(dt) {
+    this.x += this.xVel * dt;
+    if (this.x + this.width < 0 || this.x > Game.width)
+        this.board.remove(this);
 
+    var collision = this.board.collide(this, FROG);
+    if (collision)
+        this.board.remove(collision);
 };
 
-Car.prototype = new Sprite();
+
+
 
 var Frog = function() {
     this.setup('frog', {
-        reloadTime: 0.25
+        reloadTime: 0.25,
+        vx: 0
     });
     this.reload = this.reloadTime;
     this.x = Game.width / 2 - this.w / 2;
     this.y = Game.height - this.h;
-
-    this.step = function(dt) {
-        if (this.board.collide(this)) this.board.remove(this);
-        this.reload -= dt;
-        if (this.reload <= 0) {
-            if (Game.keys['up']) {
-                this.reload = this.reloadTime;
-                this.y -= this.h;
-
-            }
-            if (Game.keys['down']) {
-                this.reload = this.reloadTime;
-                this.y += this.h;
-            }
-            if (Game.keys['right']) {
-                this.reload = this.reloadTime;
-                this.x += this.w;
-            }
-
-            if (Game.keys['left']) {
-                this.reload = this.reloadTime;
-                this.x -= this.w;
-            }
-
-
-            if (this.y < 0) this.y = 0;
-            else if (this.y > Game.height - this.h) this.y = Game.height - this.h;
-            if (this.x < 0) this.x = 0;
-            else if (this.x > Game.width - this.w) this.x = Game.width - this.w;
-        }
-    };
+    //this.y = 0;
+}
+Frog.prototype = new Sprite();
+Frog.prototype.type = FROG;
+Frog.prototype.onLog = function(vLog) {
+    this.vx = vLog;
 };
 
-Frog.prototype = new Sprite();
+Frog.prototype.step = function(dt) {
+
+    this.reload -= dt;
+    if (this.reload <= 0) {
+        // Movimiento por el tronco
+
+        this.x += this.vx * dt;
+
+        if (Game.keys['up']) {
+            this.reload = this.reloadTime;
+            this.y -= this.h;
+        } else if (Game.keys['down']) {
+            this.reload = this.reloadTime;
+            this.y += this.h;
+        } else if (Game.keys['right']) {
+            this.reload = this.reloadTime;
+            this.x += this.w;
+        } else if (Game.keys['left']) {
+            this.reload = this.reloadTime;
+            this.x -= this.w;
+        }
+
+
+        if (this.y < 0) this.y = 0;
+        else if (this.y > Game.height - this.h) this.y = Game.height - this.h;
+        if (this.x < 0) this.x = 0;
+        else if (this.x > Game.width - this.w) this.x = Game.width - this.w;
+    }
+    this.vx = 0;
+};
+
 
 var Background = function() {
     this.setup('bg', {});
     this.x = 0;
     this.y = 0;
-    this.step = function(dt) {};
 };
 
+
 Background.prototype = new Sprite();
+Background.prototype.step = function(dt) {};
 
 window.addEventListener("load", function() {
     Game.initialize("game", sprites, playGame);
