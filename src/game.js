@@ -78,6 +78,9 @@ var startGame = function() {
 var lostGame = function() {
     Game.setBoard(0, new TitleScreen("YOU LOST", "looser lol", startGame));
 };
+var winGame = function() {
+    Game.setBoard(0, new TitleScreen("YOU WIN", "xd xd xd", startGame));
+}
 var playGame = function() {
     var bgBoard = new GameBoard();
     bgBoard.add(new Background());
@@ -87,12 +90,33 @@ var playGame = function() {
     gameBoard.add(new Log());
     gameBoard.add(new Car());
     gameBoard.add(new Car());
+
     gameBoard.add(new Frog());
+    gameBoard.add(new Home());
     gameBoard.add(new Water());
+
     Game.setBoard(1, gameBoard);
 };
 
 /* Classes */
+var Home = function() {
+    this.x = 0;
+    this.y = 0;
+    this.w = Game.width;
+    this.h = 48;
+};
+Home.prototype = new Sprite();
+Home.prototype.step = function(dt) {
+    var col = this.board.collide(this, FROG);
+    if (col && col.type === FROG) {
+        this.board.remove(col);
+        winGame();
+    }
+
+};
+Home.prototype.draw = function() {
+
+};
 var Death = function(frog) {
     this.setup('death', {
         frame: 0,
@@ -118,8 +142,9 @@ Death.prototype.step = function(dt) {
 var Water = function() {
     this.y = 48;
     this.x = 0;
-    this.width = Game.width;
-    this.height = Game.height;
+    this.w = Game.width;
+    this.h = 48 * 3;
+    //this.h = 0;
 };
 
 Water.prototype = new Sprite();
@@ -189,8 +214,10 @@ Car.prototype.step = function(dt) {
         this.board.remove(this);
 
     var collision = this.board.collide(this, FROG);
-    if (collision)
+    if (collision) {
         this.board.remove(collision);
+        this.board.add(new Death(collision));
+    }
 };
 
 
@@ -203,8 +230,8 @@ var Frog = function() {
     });
     this.reload = this.reloadTime;
     this.x = Game.width / 2 - this.w / 2;
-    //this.y = Game.height - this.h;
-    this.y = 0;
+    this.y = Game.height - this.h;
+    //this.y = 0;
 }
 Frog.prototype = new Sprite();
 Frog.prototype.type = FROG;
