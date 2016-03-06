@@ -69,7 +69,15 @@ var FROG = 1,
     LOG = 3,
     WATER = 4;
 
+var startGame = function() {
+    Game.setBoard(0, new TitleScreen("Froggerr",
+        "Press space to start playing",
+        playGame));
+
+};
+
 var playGame = function() {
+
     var bgBoard = new GameBoard();
     bgBoard.add(new Background());
     Game.setBoard(0, bgBoard);
@@ -250,5 +258,6 @@ Background.prototype = new Sprite();
 Background.prototype.step = function(dt) {};
 
 window.addEventListener("load", function() {
-    Game.initialize("game", sprites, playGame);
+
+    Game.initialize("game", sprites, startGame);
 });
