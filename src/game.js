@@ -86,10 +86,7 @@ var playGame = function() {
     bgBoard.add(new Background());
     Game.setBoard(0, bgBoard);
     var gameBoard = new GameBoard();
-    gameBoard.add(new Log());
-    gameBoard.add(new Log());
-    gameBoard.add(new Car());
-    gameBoard.add(new Car());
+    gameBoard.add(new Spawner());
 
     gameBoard.add(new Frog());
     gameBoard.add(new Home());
@@ -99,65 +96,52 @@ var playGame = function() {
 };
 
 /* Classes */
-var Home = function() {
-    this.x = 0;
-    this.y = 0;
-    this.w = Game.width;
-    this.h = 48;
+
+var Spawner = function() {
+    this.logs_respawn = 2;
+    this.cars_respawn = 2;
+    this.logsCounter = 0;
+    this.carsCounter = 0;
+    // Objetos a clonar
+    this.log1 = new Log(0, 200);
+    this.log2 = new Log(1, -175);
+    this.log3 = new Log(2, 150);
+    this.car1 = new Car(1, 200);
+    this.car2 = new Car(2, -200);
+    this.car3 = new Car(3, -200);
+    this.car4 = new Car(4, 200);
+
 };
-Home.prototype = new Sprite();
-Home.prototype.step = function(dt) {
-    var col = this.board.collide(this, FROG);
-    if (col && col.type === FROG) {
-        this.board.remove(col);
-        winGame();
+Spawner.prototype = new Sprite();
+
+Spawner.prototype.draw = function() {};
+Spawner.prototype.step = function(dt) {
+    this.logsCounter += dt;
+    this.carsCounter += dt;
+    if (this.logsCounter > this.logs_respawn) {
+        this.board.add(Object.create(this.log1));
+        this.board.add(Object.create(this.log2));
+        this.board.add(Object.create(this.log3));
+        this.logsCounter -= this.logs_respawn;
     }
-
-};
-Home.prototype.draw = function() {
-
-};
-var Death = function(frog) {
-    this.setup('death', {
-        frame: 0,
-        f: 0
-    });
-    this.x = frog.x;
-    this.y = frog.y;
-};
-
-Death.prototype = new Sprite();
-Death.prototype.step = function(dt) {
-    this.f += dt;
-    if (this.f >= 1 / 4) {
-        this.f -= 1 / 4;
-        this.frame++;
-    }
-
-    if (this.frame > sprites['death'].frames) {
-        this.board.remove(this);
-        lostGame();
+    if (this.carsCounter > this.cars_respawn) {
+        this.board.add(Object.create(this.car1));
+        this.board.add(Object.create(this.car2));
+        this.board.add(Object.create(this.car3));
+        this.board.add(Object.create(this.car4));
+        this.carsCounter -= this.cars_respawn;
     }
 };
-var Water = function() {
-    this.y = 48;
-    this.x = 0;
-    this.w = Game.width;
-    this.h = 48 * 3;
-    //this.h = 0;
-};
 
-Water.prototype = new Sprite();
-Water.prototype.type = WATER;
-Water.prototype.draw = function() {};
-Water.prototype.step = function(dt) {
 
-};
-
-var Log = function() {
+var Log = function(row, speed) {
     var seed = Math.random();
     this.setup('trunk', {});
 
+    this.xVel = speed;
+    this.x = (speed > 0) ? 0 : Game.width;
+    this.y = 48 + row * 48;
+    /*
     if ((Math.floor(seed * 2) + 1) == 1) {
         // se mueve de izquierda a derecha
         this.xVel = (Math.floor(seed * 150) + 100);
@@ -170,7 +154,7 @@ var Log = function() {
         this.x = Game.width;
     }
 
-    this.y = 48 + ((Math.floor(seed * 3)) * 48);
+    this.y = 48 + ((Math.floor(seed * 3)) * 48);*/
 };
 
 Log.prototype = new Sprite();
@@ -187,10 +171,12 @@ Log.prototype.step = function(dt) {
 };
 
 
-var Car = function() {
+var Car = function(row, speed) {
     var seed = Math.random();
-    this.setup('car' + (Math.floor(seed * 5) + 1), {});
-
+    this.setup('car' + (row + 1), {});
+    this.xVel = speed;
+    this.x = (speed > 0) ? 0 : Game.width;
+    /*
     if ((Math.floor(seed * 2) + 1) == 1) {
         // se mueve de izquierda a derecha
         this.xVel = (Math.floor(seed * 150) + 100);
@@ -201,9 +187,9 @@ var Car = function() {
         this.xVel = -(Math.floor(seed * 150) + 100);
         console.log(this.xVel);
         this.x = Game.width;
-    }
+    }*/
 
-    this.y = Game.height - 48 - ((Math.floor(seed * 4) + 1) * 48);
+    this.y = Game.height - 48 - (row * 48);
 };
 Car.prototype = new Sprite();
 Car.prototype.type = CAR;
@@ -273,7 +259,62 @@ Frog.prototype.step = function(dt) {
     }
     this.vx = 0;
 };
+var Home = function() {
+    this.x = 0;
+    this.y = 0;
+    this.w = Game.width;
+    this.h = 48;
+};
+Home.prototype = new Sprite();
+Home.prototype.step = function(dt) {
+    var col = this.board.collide(this, FROG);
+    if (col && col.type === FROG) {
+        this.board.remove(col);
+        winGame();
+    }
 
+};
+Home.prototype.draw = function() {
+
+};
+
+
+var Death = function(frog) {
+    this.setup('death', {
+        frame: 0,
+        f: 0
+    });
+    this.x = frog.x;
+    this.y = frog.y;
+};
+
+Death.prototype = new Sprite();
+Death.prototype.step = function(dt) {
+    this.f += dt;
+    if (this.f >= 1 / 4) {
+        this.f -= 1 / 4;
+        this.frame++;
+    }
+
+    if (this.frame > sprites['death'].frames) {
+        this.board.remove(this);
+        lostGame();
+    }
+};
+var Water = function() {
+    this.y = 48;
+    this.x = 0;
+    this.w = Game.width;
+    this.h = 48 * 3;
+    //this.h = 0;
+};
+
+Water.prototype = new Sprite();
+Water.prototype.type = WATER;
+Water.prototype.draw = function() {};
+Water.prototype.step = function(dt) {
+
+};
 
 var Background = function() {
     this.setup('bg', {});
