@@ -185,8 +185,10 @@ var SpriteSheet = new function() {
 var TitleScreen = function TitleScreen(title, subtitle, callback) {
     var up = false;
     this.step = function(dt) {
-        if (!Game.keys['fire']) up = true;
-        if (up && Game.keys['fire'] && callback) callback();
+        if (!Game.keys['fire'])
+            up = true;
+        if (up && Game.keys['fire'] && callback)
+            callback();
     };
 
     this.draw = function(ctx) {
@@ -196,7 +198,7 @@ var TitleScreen = function TitleScreen(title, subtitle, callback) {
         ctx.fillRect(0, 0, Game.width, Game.height);
 
         // Foreground
-        ctx.fillStyle = "#FFFFFF";
+        ctx.fillStyle = "#00FF00";
 
         ctx.font = "bold 40px bangers";
         var measure = ctx.measureText(title);
@@ -221,6 +223,9 @@ var GameBoard = function() {
         obj.board = this;
         this.objects.push(obj);
         this.cnt[obj.type] = (this.cnt[obj.type] || 0) + 1;
+        this.objects.sort(function(a, b) {
+            return a.zIndex - b.zIndex;
+        });
         return obj;
     };
 
@@ -328,7 +333,7 @@ Sprite.prototype.hit = function(damage) {
     this.board.remove(this);
 };
 
-
+/*
 var Level = function(levelData, callback) {
     this.levelData = [];
     for (var i = 0; i < levelData.length; i++) {
@@ -381,7 +386,7 @@ Level.prototype.step = function(dt) {
 
 };
 
-Level.prototype.draw = function(ctx) {};
+Level.prototype.draw = function(ctx) {};*/
 
 
 var TouchControls = function() {

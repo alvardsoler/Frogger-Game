@@ -64,32 +64,80 @@ var sprites = {
     }
 };
 
+var spawnObjects = {
+    car1: {
+        sprite: 'car1',
+        speed: 200
+    },
+    car2: {
+        sprite: 'car2',
+        speed: -200
+    },
+    car3: {
+        sprite: 'car3',
+        speed: 200
+    },
+    car4: {
+        sprite: 'car4',
+        speed: -300
+    },
+    log1: {
+        sprite: 'log',
+        row: 0,
+        speed: -300
+    },
+    log2: {
+        sprite: 'log',
+        row: 1,
+        speed: 300
+    },
+    log3: {
+        sprite: 'log',
+        row: 2,
+        speed: -300
+    }
+
+};
+
+var level1 = [
+    // start, end, gap, type, override
+    [0, 60000, 5000, 'car1'],
+    [0, 60000, 2000, 'car2'],
+    [0, 60000, 3000, 'car3'],
+    [0, 60000, 1500, 'car4'],
+    [0, 60000, 1500, 'log1'],
+    [0, 60000, 1500, 'log2'],
+    [0, 60000, 1500, 'log3'],
+];
+
 var FROG = 1,
     CAR = 2,
     LOG = 3,
     WATER = 4;
 
 var startGame = function() {
-    Game.setBoard(0, new TitleScreen("Froggerr",
+    Game.setBoard(1, new TitleScreen("Froggerr",
         "Press space to start playing",
         playGame));
 
 };
 var lostGame = function() {
-    Game.setBoard(0, new TitleScreen("YOU LOST", "looser lol", startGame));
+    Game.setBoard(1, new TitleScreen("YOU LOST",
+        "looser lol", startGame));
 };
 var winGame = function() {
-    Game.setBoard(0, new TitleScreen("YOU WIN", "xd xd xd", startGame));
-}
+    Game.setBoard(1, new TitleScreen("YOU WIN",
+        "xd xd xd", startGame));
+};
 var playGame = function() {
     var bgBoard = new GameBoard();
     bgBoard.add(new Background());
     Game.setBoard(0, bgBoard);
     var gameBoard = new GameBoard();
-    gameBoard.add(new Spawner());
+    gameBoard.add(new Level(level1));
 
     gameBoard.add(new Frog());
-    gameBoard.add(new Home());
+    //gameBoard.add(new Home());
     gameBoard.add(new Water());
 
     Game.setBoard(1, gameBoard);
@@ -97,47 +145,52 @@ var playGame = function() {
 
 /* Classes */
 
-var Spawner = function() {
-    this.logs_respawn = 2;
-    this.cars_respawn = 2;
-    this.logsCounter = 0;
-    this.carsCounter = 0;
-    // Objetos a clonar
-    this.log1 = new Log(0, 200);
-    this.log2 = new Log(1, -175);
-    this.log3 = new Log(2, 150);
-    this.car1 = new Car(1, 200);
-    this.car2 = new Car(2, -200);
-    this.car3 = new Car(3, -200);
-    this.car4 = new Car(4, 200);
-
-};
-Spawner.prototype = new Sprite();
-
-Spawner.prototype.draw = function() {};
-Spawner.prototype.step = function(dt) {
-    this.logsCounter += dt;
-    this.carsCounter += dt;
-    if (this.logsCounter > this.logs_respawn) {
-        this.board.add(Object.create(this.log1));
-        this.board.add(Object.create(this.log2));
-        this.board.add(Object.create(this.log3));
-        this.logsCounter -= this.logs_respawn;
+var Level = function(levelData) {
+    this.levelData = [];
+    for (var i = 0; i < levelData.length; i++) {
+        this.levelData.push(Object.create(levelData[i]));
     }
-    if (this.carsCounter > this.cars_respawn) {
-        this.board.add(Object.create(this.car1));
-        this.board.add(Object.create(this.car2));
-        this.board.add(Object.create(this.car3));
-        this.board.add(Object.create(this.car4));
-        this.carsCounter -= this.cars_respawn;
+    this.t = 0;
+};
+Level.prototype = new Sprite();
+
+Level.prototype.draw = function() {};
+Level.prototype.step = function(dt) {
+    var idx = 0,
+        remove = [],
+        curEnemy = null;
+
+    // Update the current time offset
+    this.t += dt * 1000;
+    // start, end, gap, type, override
+    // num gap stepT type
+    while ((curEnemy = this.levelData[idx]) && (curEnemy[0] < this.t + 2000)) {
+        if (this.t > curEnemy[1]) { // end
+            remove.push(curEnemy);
+        } else if (curEnemy[0] < this.t) {
+            var enemy = spawnObjects[curEnemy[3]],
+                override = curEnemy[4];
+            if (enemy.sprite.startsWith('car')) this.board.add(new Car(enemy.sprite, enemy.speed));
+            else if (enemy.sprite.startsWith('log')) this.board.add(new Log(enemy.row, enemy.speed));
+
+
+            curEnemy[0] += curEnemy[2];
+        }
+        idx++;
+    }
+    // 
+    for (var i = 0, len = remove.length; i < len; i++) {
+        var idx = this.levelData.indexOf(remove[i]);
+        if (idx != -1) this.levelData.splice(idx, 1);
     }
 };
 
 
 var Log = function(row, speed) {
     var seed = Math.random();
-    this.setup('trunk', {});
-
+    this.setup('trunk', {
+        zIndex: 1
+    });
     this.xVel = speed;
     this.x = (speed > 0) ? 0 : Game.width;
     this.y = 48 + row * 48;
@@ -171,25 +224,16 @@ Log.prototype.step = function(dt) {
 };
 
 
-var Car = function(row, speed) {
+var Car = function(sprite, speed) {
     var seed = Math.random();
-    this.setup('car' + (row + 1), {});
+    this.setup(sprite, {
+        zIndex: 5
+    });
     this.xVel = speed;
     this.x = (speed > 0) ? 0 : Game.width;
-    /*
-    if ((Math.floor(seed * 2) + 1) == 1) {
-        // se mueve de izquierda a derecha
-        this.xVel = (Math.floor(seed * 150) + 100);
-        console.log(this.xVel);
-        this.x = 0;
-    } else {
-        //se mueve de derecha a izquierda
-        this.xVel = -(Math.floor(seed * 150) + 100);
-        console.log(this.xVel);
-        this.x = Game.width;
-    }*/
 
-    this.y = Game.height - 48 - (row * 48);
+
+    this.y = Game.height - 48 - (parseInt(sprite[3]) * 48);
 };
 Car.prototype = new Sprite();
 Car.prototype.type = CAR;
@@ -212,12 +256,13 @@ Car.prototype.step = function(dt) {
 var Frog = function() {
     this.setup('frog', {
         reloadTime: 0.25,
-        vx: 0
+        vx: 0,
+        zIndex: 4
     });
     this.reload = this.reloadTime;
     this.x = Game.width / 2 - this.w / 2;
-    this.y = Game.height - this.h;
-    //this.y = 0;
+    //this.y = Game.height - this.h;
+    this.y = 0;
 }
 Frog.prototype = new Sprite();
 Frog.prototype.type = FROG;
@@ -264,6 +309,9 @@ var Home = function() {
     this.y = 0;
     this.w = Game.width;
     this.h = 48;
+    this.setup('', {
+        zIndex: 0
+    });
 };
 Home.prototype = new Sprite();
 Home.prototype.step = function(dt) {
@@ -282,7 +330,8 @@ Home.prototype.draw = function() {
 var Death = function(frog) {
     this.setup('death', {
         frame: 0,
-        f: 0
+        f: 0,
+        zIndex: 5
     });
     this.x = frog.x;
     this.y = frog.y;
@@ -306,6 +355,7 @@ var Water = function() {
     this.x = 0;
     this.w = Game.width;
     this.h = 48 * 3;
+    this.zIndex = 0;
     //this.h = 0;
 };
 
@@ -317,7 +367,9 @@ Water.prototype.step = function(dt) {
 };
 
 var Background = function() {
-    this.setup('bg', {});
+    this.setup('bg', {
+        zIndex: 0
+    });
     this.x = 0;
     this.y = 0;
 };
