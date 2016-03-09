@@ -61,6 +61,13 @@ var sprites = {
         w: 48,
         h: 48,
         frames: 4
+    },
+    bird: {
+        sx: 149,
+        sy: 56,
+        w: 31,
+        h: 24,
+        frames: 2
     }
 };
 
@@ -140,12 +147,35 @@ var playGame = function() {
     var gameBoard = new GameBoard();
     gameBoard.add(new Level(level));
     gameBoard.add(new Frog());
+    gameBoard.add(new Bird());
     gameBoard.add(new Home());
     gameBoard.add(new Water());
     Game.setBoard(1, gameBoard);
 };
 
 /* Classes */
+var Bird = function() {
+    this.setup('bird', {
+        frame: 0,
+        f: 0,
+        zIndex: 5
+    });
+    this.ySpeed = -20;
+    this.x = Game.width / 2;
+    this.y = Game.height / 2;
+    this.zIndex = 6;
+}
+
+Bird.prototype = new Sprite();
+Bird.prototype.step = function(dt) {
+    this.f += dt;
+    if (this.f >= 1 / 4) {
+        this.f -= 1 / 4;
+        this.frame++;
+    }
+    if (this.frame > sprites.bird.frames) this.frame = 0;
+    this.y += this.ySpeed * dt;
+};
 
 var Spawner = function(data) {
     this.gap = data[0];
