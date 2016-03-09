@@ -67,15 +67,15 @@ var sprites = {
 var spawnObjects = {
     car1: {
         sprite: 'car1',
-        speed: 200
+        speed: -200
     },
     car2: {
         sprite: 'car2',
-        speed: -200
+        speed: 200
     },
     car3: {
         sprite: 'car3',
-        speed: 200
+        speed: -200
     },
     car4: {
         sprite: 'car4',
@@ -84,41 +84,44 @@ var spawnObjects = {
     log1: {
         sprite: 'log',
         row: 0,
-        speed: -300
+        speed: -200
     },
     log2: {
         sprite: 'log',
         row: 1,
-        speed: 300
+        speed: 155
     },
     log3: {
         sprite: 'log',
         row: 2,
-        speed: -300
+        speed: -120
     }
 
 };
 
-var level1 = [
-    // start, end, gap, type, override
-    [0, 60000, 5000, 'car1'],
-    [0, 60000, 2000, 'car2'],
-    [0, 60000, 3000, 'car3'],
-    [0, 60000, 1500, 'car4'],
-    [0, 60000, 1500, 'log1'],
-    [0, 60000, 1500, 'log2'],
-    [0, 60000, 1500, 'log3'],
-];
+
 
 var FROG = 1,
-    CAR = 2,
-    LOG = 3,
-    WATER = 4;
-
+    LOG = 2,
+    CAR = 4,
+    WATER = 8,
+    INSECT = 16;
+var level = [];
 var startGame = function() {
     Game.setBoard(1, new TitleScreen("Froggerr",
         "Press space to start playing",
         playGame));
+    level = [
+        // gap spawn
+        [3, new Car(spawnObjects.car1.sprite, spawnObjects.car1.speed)],
+        [2.5, new Car(spawnObjects.car2.sprite, spawnObjects.car2.speed)],
+        [3.5, new Car(spawnObjects.car3.sprite, spawnObjects.car3.speed)],
+        [4, new Car(spawnObjects.car4.sprite, spawnObjects.car4.speed)],
+        [3, new Log(spawnObjects.log1.row, spawnObjects.log1.speed)],
+        [5, new Log(spawnObjects.log2.row, spawnObjects.log2.speed)],
+        [4, new Log(spawnObjects.log3.row, spawnObjects.log3.speed)]
+    ];
+
 
 };
 var lostGame = function() {
@@ -128,35 +131,58 @@ var lostGame = function() {
 var winGame = function() {
     Game.setBoard(1, new TitleScreen("YOU WIN",
         "xd xd xd", startGame));
+
 };
 var playGame = function() {
     var bgBoard = new GameBoard();
     bgBoard.add(new Background());
     Game.setBoard(0, bgBoard);
     var gameBoard = new GameBoard();
-    gameBoard.add(new Level(level1));
-
+    gameBoard.add(new Level(level));
     gameBoard.add(new Frog());
-    //gameBoard.add(new Home());
+    gameBoard.add(new Home());
     gameBoard.add(new Water());
-
     Game.setBoard(1, gameBoard);
 };
 
 /* Classes */
 
-var Level = function(levelData) {
-    this.levelData = [];
-    for (var i = 0; i < levelData.length; i++) {
-        this.levelData.push(Object.create(levelData[i]));
+var Spawner = function(data) {
+    this.gap = data[0];
+    this.obj = data[1];
+    this.zIndex = 0;
+    this.t = 0;
+}
+
+Spawner.prototype = new Sprite();
+Spawner.prototype.draw = function() {};
+Spawner.prototype.step = function(dt) {
+    this.t += dt;
+    if (this.t >= this.gap) {
+        this.board.add(Object.create(this.obj));
+        this.t -= this.gap;
     }
+};
+
+
+var Level = function(levelData) {
+    this.levelData = levelData;
     this.t = 0;
 };
-Level.prototype = new Sprite();
 
+Level.prototype = new Sprite();
 Level.prototype.draw = function() {};
 Level.prototype.step = function(dt) {
-    var idx = 0,
+    if (this.t == 0) {
+        for (var i = 0; i < this.levelData.length; i++) {
+            // mirar como hacer esto automático
+            this.board.add(new Spawner(this.levelData[i]));
+        }
+        this.t++;
+    }
+    /* codigo viejo
+    
+   var idx = 0,
         remove = [],
         curEnemy = null;
 
@@ -182,7 +208,7 @@ Level.prototype.step = function(dt) {
     for (var i = 0, len = remove.length; i < len; i++) {
         var idx = this.levelData.indexOf(remove[i]);
         if (idx != -1) this.levelData.splice(idx, 1);
-    }
+    }*/
 };
 
 
@@ -194,20 +220,6 @@ var Log = function(row, speed) {
     this.xVel = speed;
     this.x = (speed > 0) ? 0 : Game.width;
     this.y = 48 + row * 48;
-    /*
-    if ((Math.floor(seed * 2) + 1) == 1) {
-        // se mueve de izquierda a derecha
-        this.xVel = (Math.floor(seed * 150) + 100);
-        console.log(this.xVel);
-        this.x = 0;
-    } else {
-        //se mueve de derecha a izquierda
-        this.xVel = -(Math.floor(seed * 150) + 100);
-        console.log(this.xVel);
-        this.x = Game.width;
-    }
-
-    this.y = 48 + ((Math.floor(seed * 3)) * 48);*/
 };
 
 Log.prototype = new Sprite();
@@ -225,7 +237,6 @@ Log.prototype.step = function(dt) {
 
 
 var Car = function(sprite, speed) {
-    var seed = Math.random();
     this.setup(sprite, {
         zIndex: 5
     });
@@ -250,9 +261,6 @@ Car.prototype.step = function(dt) {
     }
 };
 
-
-
-
 var Frog = function() {
     this.setup('frog', {
         reloadTime: 0.25,
@@ -261,8 +269,8 @@ var Frog = function() {
     });
     this.reload = this.reloadTime;
     this.x = Game.width / 2 - this.w / 2;
-    //this.y = Game.height - this.h;
-    this.y = 0;
+    this.y = Game.height - this.h;
+    //this.y = 0;
 }
 Frog.prototype = new Sprite();
 Frog.prototype.type = FROG;
@@ -271,8 +279,7 @@ Frog.prototype.onLog = function(vLog) {
 };
 
 Frog.prototype.step = function(dt) {
-    var col = this.board.collide(this);
-    if (col.type === WATER) {
+    if (this.board.collide(this, WATER) && !this.board.collide(this, LOG)) {
         this.board.remove(this);
         this.board.add(new Death(this));
     }
@@ -309,16 +316,20 @@ var Home = function() {
     this.y = 0;
     this.w = Game.width;
     this.h = 48;
-    this.setup('', {
-        zIndex: 0
-    });
+    this.zIndex = 0;
+    this.t = 0;
+
 };
 Home.prototype = new Sprite();
 Home.prototype.step = function(dt) {
     var col = this.board.collide(this, FROG);
     if (col && col.type === FROG) {
-        this.board.remove(col);
-        winGame();
+        this.t += dt;
+        if (this.t >= 0.5) {
+            this.board.remove(col);
+            winGame();
+        }
+
     }
 
 };
