@@ -64,8 +64,8 @@ var sprites = {
     },
     bird: {
         sx: 149,
-        sy: 56,
-        w: 31,
+        sy: 57,
+        w: 32,
         h: 24,
         frames: 2
     }
@@ -107,17 +107,19 @@ var spawnObjects = {
 };
 
 
-
 var FROG = 1,
     LOG = 2,
     CAR = 4,
     WATER = 8,
     INSECT = 16;
+
 var level = [];
 var startGame = function() {
     Game.setBoard(1, new TitleScreen("Froggerr",
         "Press space to start playing",
         playGame));
+    Game.lives = 3;
+
     level = [
         // gap spawn
         [3, new Car(spawnObjects.car1.sprite, spawnObjects.car1.speed)],
@@ -133,11 +135,11 @@ var startGame = function() {
 };
 var lostGame = function() {
     Game.setBoard(1, new TitleScreen("YOU LOST",
-        "looser lol", startGame));
+        "looser", startGame));
 };
 var winGame = function() {
     Game.setBoard(1, new TitleScreen("YOU WIN",
-        "xd xd xd", startGame));
+        "Congrats!", startGame));
 
 };
 var playGame = function() {
@@ -160,21 +162,30 @@ var Bird = function() {
         f: 0,
         zIndex: 5
     });
-    this.ySpeed = -20;
-    this.x = Game.width / 2;
-    this.y = Game.height / 2;
+    this.ySpeed = -55;
+    this.x = Game.width / 2 + 48 * 2;
+    this.y = Game.height;
     this.zIndex = 6;
-}
+};
 
 Bird.prototype = new Sprite();
 Bird.prototype.step = function(dt) {
+    if (this.y + this.h < 0) {
+        this.board.remove(this);
+    }
     this.f += dt;
     if (this.f >= 1 / 4) {
         this.f -= 1 / 4;
         this.frame++;
     }
-    if (this.frame > sprites.bird.frames) this.frame = 0;
+    if (this.frame > sprites.bird.frames)
+        this.frame = 0;
     this.y += this.ySpeed * dt;
+    var col = this.board.collide(this, FROG);
+    if (col) {
+        col.hit();
+    }
+
 };
 
 var Spawner = function(data) {
@@ -210,35 +221,6 @@ Level.prototype.step = function(dt) {
         }
         this.t++;
     }
-    /* codigo viejo
-    
-   var idx = 0,
-        remove = [],
-        curEnemy = null;
-
-    // Update the current time offset
-    this.t += dt * 1000;
-    // start, end, gap, type, override
-    // num gap stepT type
-    while ((curEnemy = this.levelData[idx]) && (curEnemy[0] < this.t + 2000)) {
-        if (this.t > curEnemy[1]) { // end
-            remove.push(curEnemy);
-        } else if (curEnemy[0] < this.t) {
-            var enemy = spawnObjects[curEnemy[3]],
-                override = curEnemy[4];
-            if (enemy.sprite.startsWith('car')) this.board.add(new Car(enemy.sprite, enemy.speed));
-            else if (enemy.sprite.startsWith('log')) this.board.add(new Log(enemy.row, enemy.speed));
-
-
-            curEnemy[0] += curEnemy[2];
-        }
-        idx++;
-    }
-    // 
-    for (var i = 0, len = remove.length; i < len; i++) {
-        var idx = this.levelData.indexOf(remove[i]);
-        if (idx != -1) this.levelData.splice(idx, 1);
-    }*/
 };
 
 
@@ -273,7 +255,6 @@ var Car = function(sprite, speed) {
     this.xVel = speed;
     this.x = (speed > 0) ? 0 : Game.width;
 
-
     this.y = Game.height - 48 - (parseInt(sprite[3]) * 48);
 };
 Car.prototype = new Sprite();
@@ -286,10 +267,12 @@ Car.prototype.step = function(dt) {
 
     var collision = this.board.collide(this, FROG);
     if (collision) {
-        this.board.remove(collision);
-        this.board.add(new Death(collision));
+        collision.hit();
+        this.board.remove(this);
     }
 };
+
+
 
 var Frog = function() {
     this.setup('frog', {
@@ -297,9 +280,14 @@ var Frog = function() {
         vx: 0,
         zIndex: 4
     });
+    this.START_POINT = {
+        x: (Game.width / 2 - this.w / 2),
+        y: Game.height - this.h
+    };
     this.reload = this.reloadTime;
-    this.x = Game.width / 2 - this.w / 2;
-    this.y = Game.height - this.h;
+    this.x = this.START_POINT.x;
+    this.y = this.START_POINT.y;
+    this.lifes = Game.lives;
     //this.y = 0;
 }
 Frog.prototype = new Sprite();
@@ -308,16 +296,24 @@ Frog.prototype.onLog = function(vLog) {
     this.vx = vLog;
 };
 
+
+Frog.prototype.hit = function() {
+    Game.lives--;
+    if (this.board.remove(this)) {
+        this.board.add(new Death(this));
+    }
+
+};
+
 Frog.prototype.step = function(dt) {
     if (this.board.collide(this, WATER) && !this.board.collide(this, LOG)) {
-        this.board.remove(this);
-        this.board.add(new Death(this));
+        this.hit();
     }
     this.reload -= dt;
     if (this.reload <= 0) {
         // Movimiento por el tronco
-
         this.x += this.vx * dt;
+
 
         if (Game.keys['up']) {
             this.reload = this.reloadTime;
@@ -325,10 +321,10 @@ Frog.prototype.step = function(dt) {
         } else if (Game.keys['down']) {
             this.reload = this.reloadTime;
             this.y += this.h;
-        } else if (Game.keys['right']) {
+        } else if (Game.keys['right'] && this.x + this.w <= Game.width - this.w) {
             this.reload = this.reloadTime;
             this.x += this.w;
-        } else if (Game.keys['left']) {
+        } else if (Game.keys['left'] && this.x - this.w >= 0) {
             this.reload = this.reloadTime;
             this.x -= this.w;
         }
@@ -374,8 +370,11 @@ var Death = function(frog) {
         f: 0,
         zIndex: 5
     });
+    this.frog = frog;
     this.x = frog.x;
     this.y = frog.y;
+    this.end = false;
+    //  this.board.remove(frog);
 };
 
 Death.prototype = new Sprite();
@@ -388,7 +387,14 @@ Death.prototype.step = function(dt) {
 
     if (this.frame > sprites['death'].frames) {
         this.board.remove(this);
-        lostGame();
+        if (!this.end)
+            if (Game.lives <= 0) {
+                lostGame();
+            } else {
+                this.board.add(new Frog());
+            }
+        this.end = true;
+
     }
 };
 var Water = function() {
@@ -397,7 +403,6 @@ var Water = function() {
     this.w = Game.width;
     this.h = 48 * 3;
     this.zIndex = 0;
-    //this.h = 0;
 };
 
 Water.prototype = new Sprite();
