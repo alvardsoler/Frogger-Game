@@ -1,3 +1,10 @@
+/**
+ * Frogger Game.
+ * @autor: Álvar Soler
+ *
+ */
+
+
 var sprites = {
     frog: {
         sx: 0,
@@ -374,7 +381,6 @@ var Death = function(frog) {
     this.x = frog.x;
     this.y = frog.y;
     this.end = false;
-    //  this.board.remove(frog);
 };
 
 Death.prototype = new Sprite();
